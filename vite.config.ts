@@ -5,6 +5,14 @@ export default defineConfig({
     "*": "vp check --fix",
   },
   pack: {
+    entry: [
+      "src/index.ts",
+      "src/sinks.ts",
+      "src/axiom.ts",
+      "src/elysia.ts",
+      "src/tanstack-start.ts",
+      "src/bun.ts",
+    ],
     dts: {
       tsgo: true,
     },
