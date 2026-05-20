@@ -1,10 +1,10 @@
 import { describe, expect, test } from "vite-plus/test";
 import { createWidekit } from "../src/index.ts";
-import * as sinks from "../src/sinks.ts";
+import { memory } from "./helpers.ts";
 
 describe("sampling", () => {
   test("keeps error wide events when configured", async () => {
-    const sink = sinks.memory();
+    const sink = memory();
     const client = createWidekit({
       sink,
       sampling: {
@@ -32,7 +32,7 @@ describe("sampling", () => {
   });
 
   test("keeps slow wide events before rate sampling", async () => {
-    const sink = sinks.memory();
+    const sink = memory();
     const client = createWidekit({
       sink,
       sampling: {
@@ -53,7 +53,7 @@ describe("sampling", () => {
   });
 
   test("uses configured randomness for rate sampling", async () => {
-    const sink = sinks.memory();
+    const sink = memory();
     const droppedReasons: string[] = [];
     const randomValues = [0.49, 0.51];
     const client = createWidekit({
@@ -86,7 +86,7 @@ describe("sampling", () => {
   });
 
   test("records disabled sampling metadata without a policy", async () => {
-    const sink = sinks.memory();
+    const sink = memory();
     const client = createWidekit({ sink });
 
     await client.run("checkout", (wideEvent) => {

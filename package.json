@@ -14,22 +14,16 @@
   },
   "files": [
     "dist",
-    "docs",
-    "LICENSE",
-    "CONTEXT.md",
-    "AGENTS.md"
+    "LICENSE"
   ],
   "type": "module",
   "types": "./dist/index.d.mts",
   "exports": {
     ".": "./dist/index.mjs",
-    "./axiom": "./dist/axiom.mjs",
-    "./bun": "./dist/bun.mjs",
     "./elysia": "./dist/elysia.mjs",
     "./fields": "./dist/fields.mjs",
     "./otlp": "./dist/otlp.mjs",
     "./production": "./dist/production.mjs",
-    "./sinks": "./dist/sinks.mjs",
     "./tanstack-start": "./dist/tanstack-start.mjs",
     "./package.json": "./package.json"
   },

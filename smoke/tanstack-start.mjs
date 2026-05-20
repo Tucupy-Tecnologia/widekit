@@ -1,9 +1,16 @@
 import { createStart } from "@tanstack/react-start";
 import { createWidekit } from "../dist/index.mjs";
-import * as sinks from "../dist/sinks.mjs";
 import { widekit } from "../dist/tanstack-start.mjs";
 
-const sink = sinks.memory();
+const records = [];
+const sink = {
+  get events() {
+    return records.map((record) => record.event);
+  },
+  emit(envelope) {
+    records.push(envelope);
+  },
+};
 const client = createWidekit({
   service: {
     name: "widekit-tanstack-start-smoke",

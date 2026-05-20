@@ -1,6 +1,6 @@
 import { describe, expect, test } from "vite-plus/test";
 import { createWidekit, type WideEventEnvelope } from "../src/index.ts";
-import * as sinks from "../src/sinks.ts";
+import { memory } from "./helpers.ts";
 
 describe("Widekit Client sink management", () => {
   test("emits to every configured Sink and forwards lifecycle calls", async () => {
@@ -88,8 +88,8 @@ describe("Widekit Client sink management", () => {
   test("rejects configuring both singular and plural Sinks", () => {
     expect(() =>
       createWidekit({
-        sink: sinks.memory(),
-        sinks: [sinks.memory()],
+        sink: memory(),
+        sinks: [memory()],
       }),
     ).toThrow("Configure either sink or sinks, not both.");
   });

@@ -20,26 +20,18 @@ const client = createProductionWidekit({
 });
 ```
 
-Use direct sinks when a project needs lower-level control.
+Use the direct OTLP Sink when a project needs lower-level control.
 
 ```ts
-import * as sinks from "widekit/sinks";
-import { axiom } from "widekit/axiom";
+import { createWidekit } from "widekit";
 import { otlp } from "widekit/otlp";
 
 const client = createWidekit({
-  sinks: [
-    sinks.console(),
-    axiom({
-      token: process.env.AXIOM_TOKEN,
-      dataset: process.env.AXIOM_DATASET,
-    }),
-    otlp({
-      endpoint: process.env.OTEL_EXPORTER_OTLP_ENDPOINT,
-      token: process.env.AXIOM_TOKEN,
-      dataset: process.env.AXIOM_DATASET,
-    }),
-  ],
+  sink: otlp({
+    endpoint: process.env.OTEL_EXPORTER_OTLP_ENDPOINT,
+    token: process.env.AXIOM_TOKEN,
+    dataset: process.env.AXIOM_DATASET,
+  }),
 });
 ```
 

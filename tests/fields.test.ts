@@ -7,7 +7,7 @@ import {
   standardFieldDictionary,
   standardFields,
 } from "../src/index.ts";
-import * as sinks from "../src/sinks.ts";
+import { memory } from "./helpers.ts";
 
 describe("standard fields", () => {
   test("exposes canonical field names for production-wide events", () => {
@@ -48,7 +48,7 @@ describe("standard fields", () => {
     const diagnostics: string[] = [];
     const client = createWidekit({
       contract: standardContract,
-      sink: sinks.memory(),
+      sink: memory(),
       onDiagnostic(diagnostic) {
         diagnostics.push(diagnostic.code);
       },
@@ -62,7 +62,7 @@ describe("standard fields", () => {
   });
 
   test("standard contract can be extended with product fields", async () => {
-    const sink = sinks.memory();
+    const sink = memory();
     const diagnostics: string[] = [];
     const contract = defineContract({
       ...standardContract.fields,

@@ -3,7 +3,7 @@ import { Elysia } from "elysia";
 import { describe, expect, test } from "vite-plus/test";
 import { widekit as elysiaWidekit } from "../src/elysia.ts";
 import { createWidekit } from "../src/index.ts";
-import * as sinks from "../src/sinks.ts";
+import { memory } from "./helpers.ts";
 import {
   widekit as tanStackStartWidekit,
   type TanStackStartWidekitContext,
@@ -32,7 +32,7 @@ type TanStackRequestMiddlewareServer = (input: {
 
 describe("real framework smoke tests", () => {
   test("Elysia app emits a Wide Event for a handled request", async () => {
-    const sink = sinks.memory();
+    const sink = memory();
     const client = createWidekit({ sink });
     const app = new Elysia()
       .use(elysiaWidekit({ client, frameworkName: "elysia-real" }))
@@ -63,7 +63,7 @@ describe("real framework smoke tests", () => {
   });
 
   test("TanStack Start accepts Widekit as request middleware", async () => {
-    const sink = sinks.memory();
+    const sink = memory();
     const client = createWidekit({ sink });
     const requestMiddleware = tanStackStartWidekit({
       client,

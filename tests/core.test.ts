@@ -1,10 +1,10 @@
 import { describe, expect, test } from "vite-plus/test";
 import { createWidekit, defineContract, field } from "../src/index.ts";
-import * as sinks from "../src/sinks.ts";
+import { memory } from "./helpers.ts";
 
 describe("createWidekit", () => {
   test("emits one wide event for a successful lifecycle", async () => {
-    const sink = sinks.memory();
+    const sink = memory();
     const client = createWidekit({
       service: {
         name: "checkout-api",
@@ -37,7 +37,7 @@ describe("createWidekit", () => {
   });
 
   test("captures errors and rethrows from run", async () => {
-    const sink = sinks.memory();
+    const sink = memory();
     const client = createWidekit({ sink });
     const error = new Error("payment failed");
 
@@ -78,7 +78,7 @@ describe("createWidekit", () => {
   });
 
   test("samples before redaction and sinks receive redacted events", async () => {
-    const sink = sinks.memory();
+    const sink = memory();
     const client = createWidekit({
       sink,
       sampling: {
@@ -108,7 +108,7 @@ describe("createWidekit", () => {
   });
 
   test("drops unsampled events before they reach sinks", async () => {
-    const sink = sinks.memory();
+    const sink = memory();
     let dropped = false;
     const client = createWidekit({
       sink,
@@ -129,7 +129,7 @@ describe("createWidekit", () => {
   });
 
   test("simple contracts warn by default without blocking emission", async () => {
-    const sink = sinks.memory();
+    const sink = memory();
     const diagnostics: string[] = [];
     const contract = defineContract({
       "payment.provider": field.enum(["stripe", "adyen"]),
@@ -155,7 +155,7 @@ describe("createWidekit", () => {
   });
 
   test("strict schema mode drops invalid contract events", async () => {
-    const sink = sinks.memory();
+    const sink = memory();
     const contract = defineContract({
       "payment.provider": field.enum(["stripe", "adyen"]),
     });
@@ -175,7 +175,7 @@ describe("createWidekit", () => {
   });
 
   test("finish is idempotent and mutations after finish are diagnostics only", async () => {
-    const sink = sinks.memory();
+    const sink = memory();
     const diagnostics: string[] = [];
     const client = createWidekit({
       sink,

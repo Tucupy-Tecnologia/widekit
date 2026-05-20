@@ -1,10 +1,10 @@
 import { describe, expect, test } from "vite-plus/test";
 import { createWidekit, type WideEventInput } from "../src/index.ts";
-import * as sinks from "../src/sinks.ts";
+import { memory } from "./helpers.ts";
 
 describe("serialization safety", () => {
   test("serializes dates, errors, symbols, and bigints before emission", async () => {
-    const sink = sinks.memory();
+    const sink = memory();
     const client = createWidekit({
       sink,
       serialization: {
@@ -34,7 +34,7 @@ describe("serialization safety", () => {
   });
 
   test("drops undefined fields and reports diagnostics", async () => {
-    const sink = sinks.memory();
+    const sink = memory();
     const diagnostics: string[] = [];
     const client = createWidekit({
       sink,
@@ -54,7 +54,7 @@ describe("serialization safety", () => {
   });
 
   test("replaces circular and oversized values with diagnostics", async () => {
-    const sink = sinks.memory();
+    const sink = memory();
     const diagnostics: string[] = [];
     const circular = {} as { self?: unknown };
     circular.self = circular;
@@ -88,7 +88,7 @@ describe("serialization safety", () => {
   });
 
   test("serializes Redaction Policy output before sinks receive it", async () => {
-    const sink = sinks.memory();
+    const sink = memory();
     const client = createWidekit({
       sink,
       redaction(event) {

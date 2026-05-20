@@ -1,9 +1,8 @@
 import { Elysia } from "elysia";
 import { describe, expect, test } from "vite-plus/test";
-import { widekit as bunWidekit } from "../src/bun.ts";
 import { widekit as elysiaWidekit } from "../src/elysia.ts";
 import { createWidekit } from "../src/index.ts";
-import * as sinks from "../src/sinks.ts";
+import { memory } from "./helpers.ts";
 import {
   widekit as tanStackStartWidekit,
   type TanStackStartWidekitContext,
@@ -31,38 +30,8 @@ type TanStackRequestMiddlewareServer = (input: {
 >;
 
 describe("framework adapters", () => {
-  test("Bun Adapter emits request and response fields", async () => {
-    const sink = sinks.memory();
-    const client = createWidekit({ sink });
-    const fetch = bunWidekit({
-      client,
-      handler(request, wideEvent) {
-        wideEvent.set("handler.url", request.url);
-        return new Response("created", { status: 201 });
-      },
-    });
-
-    const response = await fetch(
-      new Request("https://example.test/checkout?cart=1", {
-        method: "POST",
-      }),
-    );
-
-    expect(response.status).toBe(201);
-    expect(await response.text()).toBe("created");
-    expect(sink.events[0]).toMatchObject({
-      "event.name": "http.request",
-      "http.request.method": "POST",
-      "url.path": "/checkout",
-      "url.scheme": "https",
-      "http.response.status_code": 201,
-      "handler.url": "https://example.test/checkout?cart=1",
-      outcome: "success",
-    });
-  });
-
   test("Elysia Adapter exposes a Wide Event Context and captures errors", async () => {
-    const sink = sinks.memory();
+    const sink = memory();
     const client = createWidekit({ sink });
     const app = new Elysia()
       .use(elysiaWidekit({ client, frameworkName: "elysia-test" }))
@@ -92,7 +61,7 @@ describe("framework adapters", () => {
   });
 
   test("TanStack Start Adapter passes the Wide Event Context to middleware", async () => {
-    const sink = sinks.memory();
+    const sink = memory();
     const client = createWidekit({ sink });
     const middleware = tanStackStartWidekit({
       client,

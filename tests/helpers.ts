@@ -1,4 +1,4 @@
-import type { WideEventEnvelope, WideEventSink } from "./core/types.ts";
+import type { WideEventEnvelope, WideEventSink } from "../src/index.ts";
 
 export type MemorySink = WideEventSink & {
   readonly records: readonly WideEventEnvelope[];
@@ -19,14 +19,6 @@ export function memory(): MemorySink {
     },
     clear() {
       records.length = 0;
-    },
-  };
-}
-
-export function console(): WideEventSink {
-  return {
-    emit(envelope) {
-      globalThis.console.log(JSON.stringify(envelope.event));
     },
   };
 }

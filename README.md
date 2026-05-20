@@ -294,39 +294,9 @@ The production helper is the main path for our products. Lower-level primitives 
 
 - `createWidekit()` for custom lifecycle and sink setup
 - `widekit/otlp` for direct OTLP Sink usage
-- `widekit/axiom` for direct Axiom ingest usage
-- `widekit/sinks` for memory and console sinks
 - `defineContract()` and `field` for optional product contracts
 - custom sampling policies
 - custom redaction hooks
-
-## Publishing
-
-Before publishing, verify the package contents and checks:
-
-```bash
-vp install
-vp check
-vp test
-vp run build
-npm pack --dry-run
-```
-
-Publish to npm:
-
-```bash
-npm login
-npm publish --access public
-```
-
-For future releases, bump the version first:
-
-```bash
-npm version patch
-npm publish --access public
-```
-
-The `widekit` package name was not found on the public npm registry during the initial publish prep, so it appears available. npm still has the final say at publish time.
 
 ## License
 
