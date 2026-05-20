@@ -27,6 +27,7 @@
     "./elysia": "./dist/elysia.mjs",
     "./fields": "./dist/fields.mjs",
     "./otlp": "./dist/otlp.mjs",
+    "./production": "./dist/production.mjs",
     "./sinks": "./dist/sinks.mjs",
     "./tanstack-start": "./dist/tanstack-start.mjs",
     "./package.json": "./package.json"

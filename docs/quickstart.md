@@ -1,39 +1,40 @@
 # Quickstart
 
-Create a Widekit client with one or more sinks.
+Create the production Widekit client once per project.
 
 ```ts
-import { createWidekit } from "widekit";
-import * as sinks from "widekit/sinks";
+import { createProductionWidekit, redactFields } from "widekit";
 
-const client = createWidekit({
+export const client = createProductionWidekit({
   service: {
     name: "checkout-api",
+    version: process.env.APP_VERSION,
+    environment: process.env.NODE_ENV,
   },
-  sink: sinks.console(),
+  axiom: {
+    token: process.env.AXIOM_TOKEN,
+    dataset: process.env.AXIOM_DATASET,
+  },
+  redaction: redactFields(["user.email", "auth.token"]),
 });
 ```
 
-Wrap a lifecycle with `run`.
+Attach the framework adapter.
+
+```ts
+import { widekit } from "widekit/elysia";
+import { client } from "./widekit.ts";
+
+app.use(widekit({ client }));
+```
+
+Enrich the lifecycle with product-specific context.
 
 ```ts
 await client.run("checkout", async (wideEvent) => {
   wideEvent.set("user.id", "user_123");
-  wideEvent.set("payment.provider", "stripe");
+  wideEvent.set("cart.total_cents", 1599);
 });
 ```
 
-Use `start` when a framework or adapter owns the lifecycle.
-
-```ts
-const wideEvent = client.start("http.request");
-
-try {
-  wideEvent.set("http.request.method", "POST");
-} catch (error) {
-  wideEvent.captureError(error);
-  throw error;
-} finally {
-  await wideEvent.finish();
-}
-```
+Use `createWidekit` directly only when a project needs lower-level control over sinks or lifecycle behavior.

@@ -14,9 +14,8 @@ describe("standard fields", () => {
     expect(standardFields.eventName).toBe("event.name");
     expect(standardFields.durationMs).toBe("duration.ms");
     expect(standardFields.httpResponseStatusCode).toBe("http.response.status_code");
-    expect(standardFields.userId).toBe("user.id");
-    expect(standardFields.orgId).toBe("org.id");
-    expect(standardFields.productName).toBe("product.name");
+    expect(standardFields.serviceName).toBe("service.name");
+    expect(standardFields.requestId).toBe("request.id");
   });
 
   test("keeps standard field constants, dictionary, and contract in sync", () => {
@@ -28,7 +27,11 @@ describe("standard fields", () => {
     expect(Object.keys(standardContract.fields).sort()).toEqual([...uniqueFieldNames].sort());
   });
 
-  test("describes how each standard field should be owned and queried", () => {
+  test("describes only Widekit-owned or adapter-owned fields", () => {
+    for (const definition of Object.values(standardFieldDictionary)) {
+      expect(["widekit", "adapter"]).toContain(definition.owner);
+    }
+
     expect(standardFieldDictionary[standardFields.serviceName]).toMatchObject({
       category: "service",
       owner: "widekit",
@@ -37,11 +40,6 @@ describe("standard fields", () => {
     expect(standardFieldDictionary[standardFields.requestId]).toMatchObject({
       category: "correlation",
       owner: "adapter",
-      kind: "string",
-    });
-    expect(standardFieldDictionary[standardFields.userId]).toMatchObject({
-      category: "actor",
-      owner: "application",
       kind: "string",
     });
   });
@@ -68,6 +66,12 @@ describe("standard fields", () => {
     const diagnostics: string[] = [];
     const contract = defineContract({
       ...standardContract.fields,
+      "product.name": field.string({
+        description: "Product family that owns this service.",
+      }),
+      "user.id": field.string({
+        description: "Authenticated user identifier.",
+      }),
       "cart.total_cents": field.number({
         description: "Checkout cart total in cents.",
       }),
@@ -86,16 +90,16 @@ describe("standard fields", () => {
     });
 
     await client.run("checkout", (wideEvent) => {
-      wideEvent.set(standardFields.productName, "traveltogether");
-      wideEvent.set(standardFields.userId, "user_123");
+      wideEvent.set("product.name", "traveltogether");
+      wideEvent.set("user.id", "user_123");
       wideEvent.set("cart.total_cents", 1599);
     });
 
     expect(diagnostics).toEqual([]);
     expect(sink.events[0]).toMatchObject({
       [standardFields.eventName]: "checkout",
-      [standardFields.productName]: "traveltogether",
-      [standardFields.userId]: "user_123",
+      "product.name": "traveltogether",
+      "user.id": "user_123",
       "cart.total_cents": 1599,
     });
   });

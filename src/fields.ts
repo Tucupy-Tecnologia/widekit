@@ -6,11 +6,9 @@ export type StandardFieldCategory =
   | "deployment"
   | "correlation"
   | "http"
-  | "actor"
-  | "error"
-  | "job";
+  | "error";
 
-export type StandardFieldOwner = "widekit" | "adapter" | "application";
+export type StandardFieldOwner = "widekit" | "adapter";
 
 export const standardFields = {
   eventName: "event.name",
@@ -18,12 +16,9 @@ export const standardFields = {
   outcome: "outcome",
   durationMs: "duration.ms",
 
-  productName: "product.name",
   serviceName: "service.name",
   serviceVersion: "service.version",
   deploymentEnvironmentName: "deployment.environment.name",
-  cloudRegion: "cloud.region",
-  gitCommitSha: "git.commit.sha",
 
   requestId: "request.id",
   traceId: "trace.id",
@@ -35,20 +30,9 @@ export const standardFields = {
   urlScheme: "url.scheme",
   routeId: "route.id",
 
-  userId: "user.id",
-  orgId: "org.id",
-  sessionId: "session.id",
-  actorType: "actor.type",
-
   errorType: "error.type",
   errorMessage: "error.message",
   errorStack: "error.stack",
-  errorCode: "error.code",
-
-  jobId: "job.id",
-  jobName: "job.name",
-  queueName: "queue.name",
-  attemptNumber: "attempt.number",
 } as const;
 
 export type StandardFieldName = (typeof standardFields)[keyof typeof standardFields];
@@ -96,14 +80,6 @@ export const standardFieldDictionary = {
     example: 124,
   },
 
-  [standardFields.productName]: {
-    field: standardFields.productName,
-    category: "service",
-    owner: "application",
-    kind: "string",
-    description: "Product family that owns the service, such as traveltogether.",
-    example: "traveltogether",
-  },
   [standardFields.serviceName]: {
     field: standardFields.serviceName,
     category: "service",
@@ -127,22 +103,6 @@ export const standardFieldDictionary = {
     kind: "string",
     description: "Deployment environment name.",
     example: "production",
-  },
-  [standardFields.cloudRegion]: {
-    field: standardFields.cloudRegion,
-    category: "deployment",
-    owner: "application",
-    kind: "string",
-    description: "Cloud or platform region where the lifecycle ran.",
-    example: "iad1",
-  },
-  [standardFields.gitCommitSha]: {
-    field: standardFields.gitCommitSha,
-    category: "deployment",
-    owner: "application",
-    kind: "string",
-    description: "Git commit SHA for the deployed code.",
-    example: "a1b2c3d",
   },
 
   [standardFields.requestId]: {
@@ -211,39 +171,6 @@ export const standardFieldDictionary = {
     example: "checkout.create",
   },
 
-  [standardFields.userId]: {
-    field: standardFields.userId,
-    category: "actor",
-    owner: "application",
-    kind: "string",
-    description: "Authenticated user identifier.",
-    example: "user_123",
-  },
-  [standardFields.orgId]: {
-    field: standardFields.orgId,
-    category: "actor",
-    owner: "application",
-    kind: "string",
-    description: "Organization, account, tenant, or workspace identifier.",
-    example: "org_123",
-  },
-  [standardFields.sessionId]: {
-    field: standardFields.sessionId,
-    category: "actor",
-    owner: "application",
-    kind: "string",
-    description: "Authenticated session identifier.",
-    example: "sess_123",
-  },
-  [standardFields.actorType]: {
-    field: standardFields.actorType,
-    category: "actor",
-    owner: "application",
-    kind: "string",
-    description: "Actor category for the lifecycle.",
-    example: "user",
-  },
-
   [standardFields.errorType]: {
     field: standardFields.errorType,
     category: "error",
@@ -268,47 +195,6 @@ export const standardFieldDictionary = {
     description: "Error stack trace when stack emission is enabled.",
     example: "Error: payment failed",
   },
-  [standardFields.errorCode]: {
-    field: standardFields.errorCode,
-    category: "error",
-    owner: "application",
-    kind: "string",
-    description: "Domain or platform error code.",
-    example: "card_declined",
-  },
-
-  [standardFields.jobId]: {
-    field: standardFields.jobId,
-    category: "job",
-    owner: "application",
-    kind: "string",
-    description: "Background job identifier.",
-    example: "job_123",
-  },
-  [standardFields.jobName]: {
-    field: standardFields.jobName,
-    category: "job",
-    owner: "application",
-    kind: "string",
-    description: "Stable background job name.",
-    example: "invoice.send",
-  },
-  [standardFields.queueName]: {
-    field: standardFields.queueName,
-    category: "job",
-    owner: "application",
-    kind: "string",
-    description: "Queue name for background work.",
-    example: "email",
-  },
-  [standardFields.attemptNumber]: {
-    field: standardFields.attemptNumber,
-    category: "job",
-    owner: "application",
-    kind: "number",
-    description: "Current attempt number for retried work.",
-    example: 2,
-  },
 } as const satisfies Record<StandardFieldName, StandardFieldDefinition>;
 
 export const standardContract = defineContract({
@@ -325,9 +211,6 @@ export const standardContract = defineContract({
     description: standardFieldDictionary[standardFields.durationMs].description,
   }),
 
-  [standardFields.productName]: field.string({
-    description: standardFieldDictionary[standardFields.productName].description,
-  }),
   [standardFields.serviceName]: field.string({
     description: standardFieldDictionary[standardFields.serviceName].description,
   }),
@@ -336,12 +219,6 @@ export const standardContract = defineContract({
   }),
   [standardFields.deploymentEnvironmentName]: field.string({
     description: standardFieldDictionary[standardFields.deploymentEnvironmentName].description,
-  }),
-  [standardFields.cloudRegion]: field.string({
-    description: standardFieldDictionary[standardFields.cloudRegion].description,
-  }),
-  [standardFields.gitCommitSha]: field.string({
-    description: standardFieldDictionary[standardFields.gitCommitSha].description,
   }),
 
   [standardFields.requestId]: field.string({
@@ -370,19 +247,6 @@ export const standardContract = defineContract({
     description: standardFieldDictionary[standardFields.routeId].description,
   }),
 
-  [standardFields.userId]: field.string({
-    description: standardFieldDictionary[standardFields.userId].description,
-  }),
-  [standardFields.orgId]: field.string({
-    description: standardFieldDictionary[standardFields.orgId].description,
-  }),
-  [standardFields.sessionId]: field.string({
-    description: standardFieldDictionary[standardFields.sessionId].description,
-  }),
-  [standardFields.actorType]: field.string({
-    description: standardFieldDictionary[standardFields.actorType].description,
-  }),
-
   [standardFields.errorType]: field.string({
     description: standardFieldDictionary[standardFields.errorType].description,
   }),
@@ -391,21 +255,5 @@ export const standardContract = defineContract({
   }),
   [standardFields.errorStack]: field.string({
     description: standardFieldDictionary[standardFields.errorStack].description,
-  }),
-  [standardFields.errorCode]: field.string({
-    description: standardFieldDictionary[standardFields.errorCode].description,
-  }),
-
-  [standardFields.jobId]: field.string({
-    description: standardFieldDictionary[standardFields.jobId].description,
-  }),
-  [standardFields.jobName]: field.string({
-    description: standardFieldDictionary[standardFields.jobName].description,
-  }),
-  [standardFields.queueName]: field.string({
-    description: standardFieldDictionary[standardFields.queueName].description,
-  }),
-  [standardFields.attemptNumber]: field.number({
-    description: standardFieldDictionary[standardFields.attemptNumber].description,
   }),
 });

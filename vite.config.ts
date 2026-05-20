@@ -8,6 +8,7 @@ export default defineConfig({
     entry: [
       "src/index.ts",
       "src/fields.ts",
+      "src/production.ts",
       "src/sinks.ts",
       "src/axiom.ts",
       "src/otlp.ts",
