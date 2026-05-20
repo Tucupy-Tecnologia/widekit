@@ -1,20 +1,21 @@
 {
   "name": "widekit",
   "version": "0.0.0",
-  "description": "A starter for creating a TypeScript package.",
-  "homepage": "https://github.com/author/library#readme",
+  "description": "Production wide-event observability kit for Axiom.",
+  "homepage": "https://github.com/Tucupy-Tecnologia/widekit#readme",
   "bugs": {
-    "url": "https://github.com/author/library/issues"
+    "url": "https://github.com/Tucupy-Tecnologia/widekit/issues"
   },
   "license": "MIT",
-  "author": "Author Name <author.name@mail.com>",
+  "author": "Tucupy Tecnologia",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/author/library.git"
+    "url": "git+https://github.com/Tucupy-Tecnologia/widekit.git"
   },
   "files": [
     "dist",
     "docs",
+    "LICENSE",
     "CONTEXT.md",
     "AGENTS.md"
   ],

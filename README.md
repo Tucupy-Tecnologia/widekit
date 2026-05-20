@@ -300,6 +300,38 @@ The production helper is the main path for our products. Lower-level primitives 
 - custom sampling policies
 - custom redaction hooks
 
+## Publishing
+
+Before publishing, verify the package contents and checks:
+
+```bash
+vp install
+vp check
+vp test
+vp run build
+npm pack --dry-run
+```
+
+Publish to npm:
+
+```bash
+npm login
+npm publish --access public
+```
+
+For future releases, bump the version first:
+
+```bash
+npm version patch
+npm publish --access public
+```
+
+The `widekit` package name was not found on the public npm registry during the initial publish prep, so it appears available. npm still has the final say at publish time.
+
+## License
+
+MIT. Widekit was built for Tucupy's production observability standard, not primarily as a public general-purpose framework. The license permits reuse, modification, redistribution, and publishing under the terms in [LICENSE](./LICENSE).
+
 ## Development
 
 ```bash
