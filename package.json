@@ -25,6 +25,7 @@
     "./axiom": "./dist/axiom.mjs",
     "./bun": "./dist/bun.mjs",
     "./elysia": "./dist/elysia.mjs",
+    "./fields": "./dist/fields.mjs",
     "./otlp": "./dist/otlp.mjs",
     "./sinks": "./dist/sinks.mjs",
     "./tanstack-start": "./dist/tanstack-start.mjs",

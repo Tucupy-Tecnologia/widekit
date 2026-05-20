@@ -4,6 +4,8 @@ A wide event is one flat dot-notated record emitted at lifecycle completion.
 
 Widekit does not emit per-step log lines in v1. Application code enriches a `wideEvent` during execution, then Widekit emits the completed event once.
 
+Use the standard field dictionary in [standard-fields.md](./standard-fields.md) for fields that should be consistent across products.
+
 ```json
 {
   "event.name": "checkout",

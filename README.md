@@ -40,6 +40,23 @@ const client = createWidekit({
 });
 ```
 
+## Standard Fields
+
+Widekit includes a shared field dictionary for production-wide consistency across products.
+
+```ts
+import { standardContract, standardFields } from "widekit";
+
+const client = createWidekit({
+  contract: standardContract,
+});
+
+await client.run("checkout", async (wideEvent) => {
+  wideEvent.set(standardFields.productName, "traveltogether");
+  wideEvent.set(standardFields.userId, "user_123");
+});
+```
+
 ## Sinks
 
 ```ts

@@ -7,6 +7,7 @@ export default defineConfig({
   pack: {
     entry: [
       "src/index.ts",
+      "src/fields.ts",
       "src/sinks.ts",
       "src/axiom.ts",
       "src/otlp.ts",

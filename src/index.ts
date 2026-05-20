@@ -1,5 +1,6 @@
 export { createWidekit } from "./core/client.ts";
 export { defineContract, field } from "./core/contract.ts";
+export { standardContract, standardFieldDictionary, standardFields } from "./fields.ts";
 export type { CreateWidekitOptions, ServiceMetadata, WidekitClient } from "./core/client.ts";
 export type {
   ContractDefinition,
@@ -9,6 +10,12 @@ export type {
 } from "./core/contract.ts";
 export type { SamplingPolicy } from "./core/sampling.ts";
 export type { SerializationOptions } from "./core/serialization.ts";
+export type {
+  StandardFieldCategory,
+  StandardFieldDefinition,
+  StandardFieldName,
+  StandardFieldOwner,
+} from "./fields.ts";
 export type {
   DiagnosticHandler,
   DiagnosticLevel,
