@@ -5,6 +5,7 @@ A sink receives completed wide-event envelopes.
 ```ts
 import * as sinks from "widekit/sinks";
 import { axiom } from "widekit/axiom";
+import { otlp } from "widekit/otlp";
 
 const client = createWidekit({
   sinks: [
@@ -13,8 +14,47 @@ const client = createWidekit({
       token: process.env.AXIOM_TOKEN,
       dataset: process.env.AXIOM_DATASET,
     }),
+    otlp({
+      endpoint: process.env.OTEL_EXPORTER_OTLP_ENDPOINT,
+      token: process.env.AXIOM_TOKEN,
+      dataset: process.env.AXIOM_DATASET,
+    }),
   ],
 });
 ```
 
 Sink failures fail open by default. Runtime emit failures are reported as diagnostics instead of changing the application lifecycle outcome.
+
+## OTLP
+
+The OTLP Sink sends completed wide events as OTLP/HTTP JSON log records to `${endpoint}/v1/logs`.
+
+```ts
+import { createWidekit } from "widekit";
+import { otlp } from "widekit/otlp";
+
+const client = createWidekit({
+  service: {
+    name: "checkout-api",
+    version: process.env.APP_VERSION,
+    environment: process.env.NODE_ENV,
+  },
+  sink: otlp({
+    endpoint: process.env.OTEL_EXPORTER_OTLP_ENDPOINT,
+    token: process.env.AXIOM_TOKEN,
+    dataset: process.env.AXIOM_DATASET,
+    resource: {
+      "cloud.region": process.env.VERCEL_REGION,
+    },
+  }),
+});
+```
+
+Widekit metadata stays in the envelope by default. If a destination should receive sampling and diagnostic metadata as OTLP attributes, opt in explicitly.
+
+```ts
+otlp({
+  endpoint: process.env.OTEL_EXPORTER_OTLP_ENDPOINT,
+  includeWidekitMetadata: true,
+});
+```

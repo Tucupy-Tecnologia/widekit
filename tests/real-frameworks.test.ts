@@ -1,6 +1,6 @@
+import { createStart } from "@tanstack/react-start";
 import { Elysia } from "elysia";
 import { describe, expect, test } from "vite-plus/test";
-import { widekit as bunWidekit } from "../src/bun.ts";
 import { widekit as elysiaWidekit } from "../src/elysia.ts";
 import { createWidekit } from "../src/index.ts";
 import * as sinks from "../src/sinks.ts";
@@ -30,20 +30,20 @@ type TanStackRequestMiddlewareServer = (input: {
     }
 >;
 
-describe("framework adapters", () => {
-  test("Bun Adapter emits request and response fields", async () => {
+describe("real framework smoke tests", () => {
+  test("Elysia app emits a Wide Event for a handled request", async () => {
     const sink = sinks.memory();
     const client = createWidekit({ sink });
-    const fetch = bunWidekit({
-      client,
-      handler(request, wideEvent) {
-        wideEvent.set("handler.url", request.url);
-        return new Response("created", { status: 201 });
-      },
-    });
+    const app = new Elysia()
+      .use(elysiaWidekit({ client, frameworkName: "elysia-real" }))
+      .post("/checkout", ({ set, wideEvent }) => {
+        set.status = 201;
+        wideEvent.set("route.id", "checkout.create");
+        return "created";
+      });
 
-    const response = await fetch(
-      new Request("https://example.test/checkout?cart=1", {
+    const response = await app.handle(
+      new Request("https://example.test/checkout", {
         method: "POST",
       }),
     );
@@ -52,56 +52,33 @@ describe("framework adapters", () => {
     expect(await response.text()).toBe("created");
     expect(sink.events[0]).toMatchObject({
       "event.name": "http.request",
+      "framework.name": "elysia-real",
       "http.request.method": "POST",
       "url.path": "/checkout",
       "url.scheme": "https",
       "http.response.status_code": 201,
-      "handler.url": "https://example.test/checkout?cart=1",
+      "route.id": "checkout.create",
       outcome: "success",
     });
   });
 
-  test("Elysia Adapter exposes a Wide Event Context and captures errors", async () => {
+  test("TanStack Start accepts Widekit as request middleware", async () => {
     const sink = sinks.memory();
     const client = createWidekit({ sink });
-    const app = new Elysia()
-      .use(elysiaWidekit({ client, frameworkName: "elysia-test" }))
-      .patch("/orders/1", ({ wideEvent }) => {
-        wideEvent.set("route.id", "orders.update");
-        throw new Error("handler failed");
-      });
-
-    const response = await app.handle(
-      new Request("https://example.test/orders/1", {
-        method: "PATCH",
-      }),
-    );
-
-    expect(response.status).toBe(500);
-    expect(sink.events[0]).toMatchObject({
-      "event.name": "http.request",
-      "framework.name": "elysia-test",
-      "http.request.method": "PATCH",
-      "url.path": "/orders/1",
-      "url.scheme": "https",
-      "http.response.status_code": 500,
-      "route.id": "orders.update",
-      outcome: "error",
-      "error.message": "handler failed",
-    });
-  });
-
-  test("TanStack Start Adapter passes the Wide Event Context to middleware", async () => {
-    const sink = sinks.memory();
-    const client = createWidekit({ sink });
-    const middleware = tanStackStartWidekit({
+    const requestMiddleware = tanStackStartWidekit({
       client,
-      frameworkName: "tanstack-test",
+      frameworkName: "tanstack-real",
     });
+    const start = createStart(() => ({
+      requestMiddleware: [requestMiddleware],
+    }));
+    const options = await start.getOptions();
     const request = new Request("https://example.test/orders/1", {
       method: "GET",
     });
-    const server = middleware.options.server as TanStackRequestMiddlewareServer | undefined;
+    const server = options.requestMiddleware?.[0]?.options.server as
+      | TanStackRequestMiddlewareServer
+      | undefined;
 
     const result = await server?.({
       request,
@@ -114,20 +91,20 @@ describe("framework adapters", () => {
           request,
           pathname: "/orders/1",
           context: input?.context ?? {},
-          response: new Response("accepted", { status: 202 }),
+          response: new Response("ok", { status: 200 }),
         };
       },
     });
     const response = result instanceof Response ? result : result?.response;
 
-    expect(response?.status).toBe(202);
+    expect(response?.status).toBe(200);
     expect(sink.events[0]).toMatchObject({
       "event.name": "http.request",
-      "framework.name": "tanstack-test",
+      "framework.name": "tanstack-real",
       "http.request.method": "GET",
       "url.path": "/orders/1",
       "url.scheme": "https",
-      "http.response.status_code": 202,
+      "http.response.status_code": 200,
       "route.id": "orders.show",
       outcome: "success",
     });

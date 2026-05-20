@@ -9,12 +9,16 @@ export default defineConfig({
       "src/index.ts",
       "src/sinks.ts",
       "src/axiom.ts",
+      "src/otlp.ts",
       "src/elysia.ts",
       "src/tanstack-start.ts",
       "src/bun.ts",
     ],
     dts: {
       tsgo: true,
+    },
+    deps: {
+      skipNodeModulesBundle: true,
     },
     exports: true,
   },

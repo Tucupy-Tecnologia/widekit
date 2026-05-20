@@ -45,11 +45,17 @@ const client = createWidekit({
 ```ts
 import * as sinks from "widekit/sinks";
 import { axiom } from "widekit/axiom";
+import { otlp } from "widekit/otlp";
 
 const client = createWidekit({
   sinks: [
     sinks.console(),
     axiom({
+      token: process.env.AXIOM_TOKEN,
+      dataset: process.env.AXIOM_DATASET,
+    }),
+    otlp({
+      endpoint: process.env.OTEL_EXPORTER_OTLP_ENDPOINT,
       token: process.env.AXIOM_TOKEN,
       dataset: process.env.AXIOM_DATASET,
     }),

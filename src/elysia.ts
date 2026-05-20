@@ -1,3 +1,4 @@
+import { Elysia } from "elysia";
 import type { WidekitClient } from "./core/client.ts";
 import type { WideEventContext, WideEventFields } from "./core/types.ts";
 
@@ -10,70 +11,64 @@ export type ElysiaWidekitOptions<Fields extends WideEventFields = WideEventField
   frameworkName?: string;
 };
 
-type ElysiaLike<Fields extends WideEventFields> = {
-  derive(
-    options: { as: "global" },
-    handler: (context: { request: Request }) => { wideEvent: WideEventContext<Fields> },
-  ): ElysiaLike<Fields>;
-  onError(
-    handler: (context: {
-      wideEvent?: WideEventContext<Fields>;
-      error: unknown;
-      set?: { status?: number | string };
-    }) => void,
-  ): ElysiaLike<Fields>;
-  onAfterResponse(
-    handler: (context: {
-      wideEvent?: WideEventContext<Fields>;
-      set?: { status?: number | string };
-    }) => void | Promise<void>,
-  ): ElysiaLike<Fields>;
-};
-
 export function widekit<Fields extends WideEventFields = WideEventFields>(
   options: ElysiaWidekitOptions<Fields>,
 ) {
-  return function widekitElysiaPlugin(app: ElysiaLike<Fields>) {
-    return app
-      .derive({ as: "global" }, ({ request }) => {
-        const wideEvent = options.client.start(options.eventName ?? "http.request");
+  return new Elysia({ name: "widekit" })
+    .derive({ as: "global" }, ({ request }) => {
+      const wideEvent = options.client.start(options.eventName ?? "http.request");
 
-        wideEvent.setBase("framework.name", options.frameworkName ?? "elysia");
+      wideEvent.setBase("framework.name", options.frameworkName ?? "elysia");
 
-        if (options.includeRequest !== false) {
-          const url = new URL(request.url);
-          wideEvent.setBase({
-            "http.request.method": request.method,
-            "url.path": url.pathname,
-            "url.scheme": url.protocol.replace(":", ""),
-          });
-        }
+      if (options.includeRequest !== false) {
+        const url = new URL(request.url);
+        wideEvent.setBase({
+          "http.request.method": request.method,
+          "url.path": url.pathname,
+          "url.scheme": url.protocol.replace(":", ""),
+        });
+      }
 
-        return { wideEvent };
-      })
-      .onError(({ wideEvent, error, set }) => {
-        if (!wideEvent || options.captureErrors === false) return;
+      return { wideEvent };
+    })
+    .onError(async ({ wideEvent, error, set }) => {
+      if (!wideEvent) return;
 
+      if (options.captureErrors !== false) {
         wideEvent.captureError(error);
-        const status = toStatusCode(set?.status);
-        if (status !== undefined) {
-          wideEvent.setBase("http.response.status_code", status);
-        }
-      })
-      .onAfterResponse(async ({ wideEvent, set }) => {
-        if (!wideEvent) return;
+      }
 
-        if (options.includeResponse !== false) {
-          const status = toStatusCode(set?.status) ?? 200;
-          wideEvent.setBase("http.response.status_code", status);
-          if (status >= 500) {
-            wideEvent.setBase("outcome", "error");
-          }
-        }
+      if (options.includeResponse !== false) {
+        setResponseStatus(wideEvent, toStatusCode(set.status) ?? 500);
+      }
 
-        await wideEvent.finish();
-      });
-  };
+      await wideEvent.finish();
+    })
+    .mapResponse(async ({ wideEvent, response, responseValue, set }) => {
+      if (!wideEvent) return;
+
+      if (options.includeResponse !== false) {
+        setResponseStatus(wideEvent, getResponseStatus(responseValue ?? response, set.status));
+      }
+
+      await wideEvent.finish();
+    })
+    .as("global");
+}
+
+function getResponseStatus(response: unknown, fallback: number | string | undefined): number {
+  if (response instanceof Response) return response.status;
+  return toStatusCode(fallback) ?? 200;
+}
+
+function setResponseStatus<Fields extends WideEventFields>(
+  wideEvent: WideEventContext<Fields>,
+  status: number,
+) {
+  wideEvent.setBase("http.response.status_code", status);
+  if (status >= 500) {
+    wideEvent.setBase("outcome", "error");
+  }
 }
 
 function toStatusCode(status: number | string | undefined): number | undefined {

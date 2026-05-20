@@ -1,3 +1,4 @@
+import { createMiddleware } from "@tanstack/react-start";
 import type { WidekitClient } from "./core/client.ts";
 import type { WideEventContext, WideEventFields } from "./core/types.ts";
 
@@ -10,48 +11,38 @@ export type TanStackStartWidekitOptions<Fields extends WideEventFields = WideEve
   frameworkName?: string;
 };
 
-export type TanStackStartMiddlewareInput<Fields extends WideEventFields> = {
-  request: Request;
-  next(input?: {
-    context?: {
-      wideEvent: WideEventContext<Fields>;
-    };
-  }): Promise<TanStackStartMiddlewareResult>;
-};
-
-export type TanStackStartMiddlewareResult = {
-  response?: Response;
+export type TanStackStartWidekitContext<Fields extends WideEventFields = WideEventFields> = {
+  wideEvent: WideEventContext<Fields>;
 };
 
 export function widekit<Fields extends WideEventFields = WideEventFields>(
   options: TanStackStartWidekitOptions<Fields>,
 ) {
-  return async function widekitTanStackStartMiddleware(
-    input: TanStackStartMiddlewareInput<Fields>,
-  ): Promise<TanStackStartMiddlewareResult> {
+  return createMiddleware().server(async ({ request, next }) => {
     const wideEvent = options.client.start(options.eventName ?? "http.request");
 
     wideEvent.setBase("framework.name", options.frameworkName ?? "tanstack-start");
 
     if (options.includeRequest !== false) {
-      const url = new URL(input.request.url);
+      const url = new URL(request.url);
       wideEvent.setBase({
-        "http.request.method": input.request.method,
+        "http.request.method": request.method,
         "url.path": url.pathname,
         "url.scheme": url.protocol.replace(":", ""),
       });
     }
 
     try {
-      const result = await input.next({
+      const result = await next({
         context: {
           wideEvent,
-        },
+        } satisfies TanStackStartWidekitContext<Fields>,
       });
+      const response = result instanceof Response ? result : result.response;
 
-      if (options.includeResponse !== false && result.response) {
-        wideEvent.setBase("http.response.status_code", result.response.status);
-        if (result.response.status >= 500) {
+      if (options.includeResponse !== false && response) {
+        wideEvent.setBase("http.response.status_code", response.status);
+        if (response.status >= 500) {
           wideEvent.setBase("outcome", "error");
         }
       }
@@ -66,5 +57,5 @@ export function widekit<Fields extends WideEventFields = WideEventFields>(
       await wideEvent.finish();
       throw error;
     }
-  };
+  });
 }
