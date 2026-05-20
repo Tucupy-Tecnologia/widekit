@@ -27,7 +27,7 @@ Fields stay flat and dot-notated so Axiom queries stay predictable across projec
 ## Install
 
 ```bash
-npm install widekit
+npm install @tucupy/widekit
 ```
 
 Use the package manager your project already uses.
@@ -38,7 +38,7 @@ For our products, this is the intended setup.
 
 ```ts
 // src/lib/widekit.ts
-import { createProductionWidekit, redactFields } from "widekit";
+import { createProductionWidekit, redactFields } from "@tucupy/widekit";
 
 export const client = createProductionWidekit({
   service: {
@@ -68,7 +68,7 @@ Attach the adapter once, then enrich the `wideEvent` inside handlers.
 
 ```ts
 import { Elysia } from "elysia";
-import { widekit } from "widekit/elysia";
+import { widekit } from "@tucupy/widekit/elysia";
 import { client } from "./lib/widekit.ts";
 
 const app = new Elysia().use(widekit({ client })).post("/checkout", async ({ set, wideEvent }) => {
@@ -99,7 +99,7 @@ Register the request middleware with TanStack Start.
 ```ts
 // src/start.ts
 import { createStart } from "@tanstack/react-start";
-import { widekit } from "widekit/tanstack-start";
+import { widekit } from "@tucupy/widekit/tanstack-start";
 import { client } from "./lib/widekit.ts";
 
 export const start = createStart(() => ({
@@ -111,7 +111,7 @@ Downstream server middleware or handlers can use the `wideEvent` from request co
 
 ```ts
 import { createMiddleware } from "@tanstack/react-start";
-import type { TanStackStartWidekitContext } from "widekit/tanstack-start";
+import type { TanStackStartWidekitContext } from "@tucupy/widekit/tanstack-start";
 
 export const checkoutWideEvent = createMiddleware().server(async ({ context, next }) => {
   const { wideEvent } = context as TanStackStartWidekitContext;
@@ -145,7 +145,7 @@ If the callback throws, Widekit captures the error fields, emits the completed W
 Redaction is explicit. Widekit does not guess sensitive fields from names.
 
 ```ts
-import { composeRedaction, redactFields } from "widekit";
+import { composeRedaction, redactFields } from "@tucupy/widekit";
 
 const redaction = composeRedaction([
   redactFields(["user.email"]),
@@ -226,7 +226,7 @@ With that config:
 Widekit only exports standard fields that Widekit core or adapters can reliably own across all projects.
 
 ```ts
-import { standardFields } from "widekit";
+import { standardFields } from "@tucupy/widekit";
 
 standardFields.eventName; // "event.name"
 standardFields.durationMs; // "duration.ms"
@@ -293,10 +293,12 @@ Find HTTP 5xx responses:
 The production helper is the main path for our products. Lower-level primitives remain available when needed:
 
 - `createWidekit()` for custom lifecycle and sink setup
-- `widekit/otlp` for direct OTLP Sink usage
+- `@tucupy/widekit/otlp` for direct OTLP Sink usage
 - `defineContract()` and `field` for optional product contracts
 - custom sampling policies
 - custom redaction hooks
+
+Additional framework support should stay modular: add a subpath adapter that exports `widekit({ client })`, keep framework dependencies optional, and preserve `createProductionWidekit` as the default application setup.
 
 ## License
 

@@ -7,7 +7,7 @@ It intentionally does not include application or product logic fields such as `p
 The dictionary is available in code:
 
 ```ts
-import { createWidekit, defineContract, field, standardContract } from "widekit";
+import { createWidekit, defineContract, field, standardContract } from "@tucupy/widekit";
 
 const contract = defineContract({
   ...standardContract.fields,

@@ -3,7 +3,7 @@
 Create the production Widekit client once per project.
 
 ```ts
-import { createProductionWidekit, redactFields } from "widekit";
+import { createProductionWidekit, redactFields } from "@tucupy/widekit";
 
 export const client = createProductionWidekit({
   service: {
@@ -22,7 +22,7 @@ export const client = createProductionWidekit({
 Attach the framework adapter.
 
 ```ts
-import { widekit } from "widekit/elysia";
+import { widekit } from "@tucupy/widekit/elysia";
 import { client } from "./widekit.ts";
 
 app.use(widekit({ client }));

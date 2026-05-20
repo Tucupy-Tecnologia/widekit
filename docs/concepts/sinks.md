@@ -5,7 +5,7 @@ A sink receives completed wide-event envelopes.
 Most products should use `createProductionWidekit`, which configures the OTLP Sink for Axiom.
 
 ```ts
-import { createProductionWidekit } from "widekit";
+import { createProductionWidekit } from "@tucupy/widekit";
 
 const client = createProductionWidekit({
   service: {
@@ -23,8 +23,8 @@ const client = createProductionWidekit({
 Use the direct OTLP Sink when a project needs lower-level control.
 
 ```ts
-import { createWidekit } from "widekit";
-import { otlp } from "widekit/otlp";
+import { createWidekit } from "@tucupy/widekit";
+import { otlp } from "@tucupy/widekit/otlp";
 
 const client = createWidekit({
   sink: otlp({
@@ -42,8 +42,8 @@ Sink failures fail open by default. Runtime emit failures are reported as diagno
 The OTLP Sink sends completed wide events as OTLP/HTTP JSON records to `${endpoint}/v1/logs`.
 
 ```ts
-import { createWidekit } from "widekit";
-import { otlp } from "widekit/otlp";
+import { createWidekit } from "@tucupy/widekit";
+import { otlp } from "@tucupy/widekit/otlp";
 
 const client = createWidekit({
   service: {

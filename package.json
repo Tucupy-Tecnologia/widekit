@@ -1,5 +1,5 @@
 {
-  "name": "widekit",
+  "name": "@tucupy/widekit",
   "version": "0.0.0",
   "description": "Production wide-event observability kit for Axiom.",
   "homepage": "https://github.com/Tucupy-Tecnologia/widekit#readme",
