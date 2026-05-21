@@ -5,7 +5,9 @@ import {
   productionSampling,
   redactFields,
   standardFields,
+  widekit,
 } from "../src/index.ts";
+import { standardConfig } from "../src/config.ts";
 import { decideSampling } from "../src/core/sampling.ts";
 import type { WideEvent } from "../src/index.ts";
 
@@ -104,6 +106,60 @@ describe("production Widekit", () => {
     expect(recordAttributes["user.email"]).toEqual({ stringValue: "[redacted]" });
     expect(recordAttributes["cart.total_cents"]).toEqual({ intValue: "1599" });
     expect(recordAttributes["widekit.sampling.reason"]).toEqual({ stringValue: "rate" });
+  });
+
+  test("standard config uses standard env names and explicit field redaction", async () => {
+    const calls: { url: string; init: RequestInit | undefined }[] = [];
+    const client = widekit({
+      config: standardConfig,
+      service: "example-service",
+      env: {
+        AXIOM_TOKEN: "token_123",
+        AXIOM_DATASET: "wide-events",
+        APP_VERSION: "1.2.3",
+        NODE_ENV: "production",
+      },
+      axiom: {
+        async fetch(url, init) {
+          calls.push({
+            url: typeof url === "string" ? url : url instanceof URL ? url.href : url.url,
+            init,
+          });
+          return new Response(null, { status: 200 });
+        },
+      },
+      redact: ["user.email"],
+    });
+
+    await client.run("operation.perform", (wideEvent) => {
+      wideEvent.set("user.email", "a@example.com");
+      wideEvent.set("domain.amount_cents", 1599);
+    });
+
+    expect(calls).toHaveLength(1);
+    expect(calls[0]?.init?.headers).toMatchObject({
+      authorization: "Bearer token_123",
+      "x-axiom-dataset": "wide-events",
+    });
+
+    const body = otlpBody(calls);
+    const resourceAttributes = attributesByKey(body.resourceLogs[0]?.resource.attributes ?? []);
+    expect(resourceAttributes[standardFields.serviceName]).toEqual({
+      stringValue: "example-service",
+    });
+    expect(resourceAttributes[standardFields.serviceVersion]).toEqual({
+      stringValue: "1.2.3",
+    });
+    expect(resourceAttributes[standardFields.deploymentEnvironmentName]).toEqual({
+      stringValue: "production",
+    });
+
+    const recordAttributes = attributesByKey(
+      body.resourceLogs[0]?.scopeLogs[0]?.logRecords[0]?.attributes ?? [],
+    );
+    expect(recordAttributes["event.name"]).toEqual({ stringValue: "operation.perform" });
+    expect(recordAttributes["user.email"]).toEqual({ stringValue: "[redacted]" });
+    expect(recordAttributes["domain.amount_cents"]).toEqual({ intValue: "1599" });
   });
 
   test("production sampling keeps errors, HTTP failures, and slow events before rate sampling", () => {

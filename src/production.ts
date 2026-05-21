@@ -1,4 +1,5 @@
 import { createWidekit, type ServiceMetadata, type WidekitClient } from "./core/client.ts";
+import type { WidekitConfig } from "./config.ts";
 import type { WidekitContract } from "./core/contract.ts";
 import type { SamplingPolicy } from "./core/sampling.ts";
 import { otlp } from "./otlp.ts";
@@ -47,8 +48,61 @@ export type RedactFieldsOptions = {
   replacement?: WideEventInput;
 };
 
+export type StandardWidekitEnv = Record<string, string | undefined> & {
+  AXIOM_TOKEN?: string | undefined;
+  AXIOM_DATASET?: string | undefined;
+  APP_VERSION?: string | undefined;
+  NODE_ENV?: string | undefined;
+};
+
+export type StandardWidekitService = string | (ServiceMetadata & { name: string });
+
+export type StandardWidekitRedaction =
+  | readonly string[]
+  | {
+      fields: readonly string[];
+      replacement?: WideEventInput;
+    };
+
+export type StandardWidekitOptions<
+  Fields extends WideEventFields = Record<string, WideEventInput>,
+> = Omit<CreateProductionWidekitOptions<Fields>, "axiom" | "redaction" | "service"> & {
+  config: WidekitConfig;
+  service: StandardWidekitService;
+  axiom?: Partial<ProductionAxiomOptions>;
+  env?: StandardWidekitEnv;
+  redact?: StandardWidekitRedaction;
+  redaction?: RedactionHook;
+};
+
 const DEFAULT_AXIOM_OTLP_ENDPOINT = "https://api.axiom.co";
 const DEFAULT_SLOW_DURATION_MS = 1000;
+
+export function widekit<Fields extends WideEventFields = Record<string, WideEventInput>>(
+  options: StandardWidekitOptions<Fields>,
+): WidekitClient<Fields> {
+  const env = options.env ?? standardEnv();
+
+  return createProductionWidekit<Fields>({
+    service: standardService(options.service, options.config, env),
+    axiom: {
+      ...options.axiom,
+      endpoint: options.axiom?.endpoint ?? options.config.axiom.endpoint,
+      token: options.axiom?.token ?? env[options.config.axiom.tokenEnv],
+      dataset: options.axiom?.dataset ?? env[options.config.axiom.datasetEnv],
+    },
+    sampling: {
+      ...options.config.sampling,
+      ...options.sampling,
+    },
+    redaction: standardRedaction(options),
+    contract: options.contract,
+    schemaMode: options.schemaMode,
+    onDiagnostic: options.onDiagnostic,
+    onDrop: options.onDrop,
+    resource: options.resource,
+  });
+}
 
 export function createProductionWidekit<
   Fields extends WideEventFields = Record<string, WideEventInput>,
@@ -127,6 +181,63 @@ export function composeRedaction(hooks: readonly RedactionHook[]): RedactionHook
 
     return current;
   };
+}
+
+function standardEnv(): StandardWidekitEnv {
+  return (
+    (globalThis as { process?: { env?: StandardWidekitEnv } }).process?.env ??
+    ({} as StandardWidekitEnv)
+  );
+}
+
+function standardService(
+  service: StandardWidekitService,
+  config: WidekitConfig,
+  env: StandardWidekitEnv,
+): ServiceMetadata & {
+  name: string;
+} {
+  if (typeof service === "string") {
+    return {
+      name: service,
+      version: env[config.service.versionEnv],
+      environment: env[config.service.environmentEnv],
+    };
+  }
+
+  return {
+    name: service.name,
+    version: service.version ?? env[config.service.versionEnv],
+    environment: service.environment ?? env[config.service.environmentEnv],
+  };
+}
+
+function standardRedaction(options: {
+  redact?: StandardWidekitRedaction;
+  redaction?: RedactionHook;
+}): RedactionHook | undefined {
+  const hooks: RedactionHook[] = [];
+
+  if (options.redact) {
+    if (isRedactionFieldList(options.redact)) {
+      hooks.push(redactFields(options.redact));
+    } else {
+      hooks.push(redactFields(options.redact.fields, { replacement: options.redact.replacement }));
+    }
+  }
+
+  if (options.redaction) {
+    hooks.push(options.redaction);
+  }
+
+  if (hooks.length === 0) return undefined;
+  if (hooks.length === 1) return hooks[0];
+
+  return composeRedaction(hooks);
+}
+
+function isRedactionFieldList(redact: StandardWidekitRedaction): redact is readonly string[] {
+  return Array.isArray(redact);
 }
 
 function isFailureStatus(status: number): boolean {

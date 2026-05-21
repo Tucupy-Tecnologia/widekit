@@ -38,29 +38,46 @@ For our products, this is the intended setup.
 
 ```ts
 // src/lib/widekit.ts
-import { createProductionWidekit, redactFields } from "@tucupy/widekit";
+import { widekit } from "@tucupy/widekit";
+import { standardConfig } from "@tucupy/widekit/config";
 
-export const client = createProductionWidekit({
-  service: {
-    name: "example-service",
-    version: process.env.APP_VERSION,
-    environment: process.env.NODE_ENV,
-  },
-  axiom: {
-    token: process.env.AXIOM_TOKEN,
-    dataset: process.env.AXIOM_DATASET,
-  },
-  redaction: redactFields(["user.email", "auth.token"]),
+export const client = widekit({
+  config: standardConfig,
+  service: "example-service",
+  redact: ["user.email", "auth.token"],
 });
 ```
 
-`createProductionWidekit` configures:
+`standardConfig` configures:
 
 - Axiom export through OTLP/HTTP
+- `AXIOM_TOKEN` and `AXIOM_DATASET` as the default Axiom env vars
+- `APP_VERSION` and `NODE_ENV` as the default version and environment env vars
 - standard service, version, and environment fields
 - production sampling defaults
 - explicit redaction
 - Widekit diagnostics and sampling metadata as OTLP attributes
+
+Override defaults only when a project needs to:
+
+```ts
+widekit({
+  config: standardConfig,
+  service: {
+    name: "example-service",
+    version: process.env.RELEASE_ID,
+    environment: process.env.DEPLOY_ENV,
+  },
+  axiom: {
+    token: process.env.CUSTOM_AXIOM_TOKEN,
+    dataset: process.env.CUSTOM_AXIOM_DATASET,
+  },
+  redact: {
+    fields: ["user.email", "auth.token"],
+    replacement: "[secret]",
+  },
+});
+```
 
 ## Elysia Usage
 
@@ -154,6 +171,18 @@ If the callback throws, Widekit captures the error fields, emits the completed W
 
 Redaction is explicit. Widekit does not guess sensitive fields from names.
 
+For the standard setup, pass fields through `redact`:
+
+```ts
+widekit({
+  config: standardConfig,
+  service: "example-service",
+  redact: ["user.email", "auth.token"],
+});
+```
+
+For lower-level setup or custom hooks, use the redaction helpers directly.
+
 ```ts
 import { composeRedaction, redactFields } from "@tucupy/widekit";
 
@@ -195,7 +224,7 @@ Sampling happens before redaction so sampling rules can inspect the original com
 
 ## Sampling
 
-`createProductionWidekit` installs `productionSampling()` by default.
+`widekit({ config: standardConfig })` installs `productionSampling()` by default.
 
 It keeps:
 
@@ -207,16 +236,9 @@ It keeps:
 The default `successRate` is `1`, so production events are not silently dropped unless a project opts into sampling.
 
 ```ts
-createProductionWidekit({
-  service: {
-    name: "example-api",
-    version: process.env.APP_VERSION,
-    environment: process.env.NODE_ENV,
-  },
-  axiom: {
-    token: process.env.AXIOM_TOKEN,
-    dataset: process.env.AXIOM_DATASET,
-  },
+widekit({
+  config: standardConfig,
+  service: "example-api",
   sampling: {
     successRate: 0.2,
     slowDurationMs: 750,
@@ -300,15 +322,16 @@ Find HTTP 5xx responses:
 
 ## Advanced Primitives
 
-The production helper is the main path for our products. Lower-level primitives remain available when needed:
+The standard `widekit()` helper is the main path for our products. Lower-level primitives remain available when needed:
 
 - `createWidekit()` for custom lifecycle and sink setup
+- `createProductionWidekit()` for explicit production setup without the standard env convention
 - `@tucupy/widekit/otlp` for direct OTLP Sink usage
 - `defineContract()` and `field` for optional product contracts
 - custom sampling policies
 - custom redaction hooks
 
-Additional framework support should stay modular: add a subpath adapter that exports `widekit({ client })`, keep framework dependencies optional, and preserve `createProductionWidekit` as the default application setup.
+Additional framework support should stay modular: add a subpath adapter that exports `widekit({ client })`, keep framework dependencies optional, and preserve the root `widekit({ config: standardConfig })` helper as the default application setup.
 
 ## License
 

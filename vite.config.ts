@@ -7,6 +7,7 @@ export default defineConfig({
   pack: {
     entry: [
       "src/index.ts",
+      "src/config.ts",
       "src/fields.ts",
       "src/production.ts",
       "src/otlp.ts",
