@@ -7,7 +7,6 @@ import {
   standardFields,
   widekit,
 } from "../src/index.ts";
-import { standardConfig } from "../src/config.ts";
 import { decideSampling } from "../src/core/sampling.ts";
 import type { WideEvent } from "../src/index.ts";
 
@@ -108,18 +107,17 @@ describe("production Widekit", () => {
     expect(recordAttributes["widekit.sampling.reason"]).toEqual({ stringValue: "rate" });
   });
 
-  test("standard config uses standard env names and explicit field redaction", async () => {
+  test("widekit creates an explicit production pipeline", async () => {
     const calls: { url: string; init: RequestInit | undefined }[] = [];
     const client = widekit({
-      config: standardConfig,
-      service: "example-service",
-      env: {
-        AXIOM_TOKEN: "token_123",
-        AXIOM_DATASET: "wide-events",
-        APP_VERSION: "1.2.3",
-        NODE_ENV: "production",
+      service: {
+        name: "example-service",
+        version: "1.2.3",
+        environment: "production",
       },
       axiom: {
+        token: "token_123",
+        dataset: "wide-events",
         async fetch(url, init) {
           calls.push({
             url: typeof url === "string" ? url : url instanceof URL ? url.href : url.url,
@@ -128,7 +126,12 @@ describe("production Widekit", () => {
           return new Response(null, { status: 200 });
         },
       },
-      redact: ["user.email"],
+      sampling: {
+        successRate: 0.05,
+        slowDurationMs: 1000,
+        random: () => 0,
+      },
+      redaction: redactFields(["user.email"]),
     });
 
     await client.run("operation.perform", (wideEvent) => {
@@ -160,6 +163,7 @@ describe("production Widekit", () => {
     expect(recordAttributes["event.name"]).toEqual({ stringValue: "operation.perform" });
     expect(recordAttributes["user.email"]).toEqual({ stringValue: "[redacted]" });
     expect(recordAttributes["domain.amount_cents"]).toEqual({ intValue: "1599" });
+    expect(recordAttributes["widekit.sampling.reason"]).toEqual({ stringValue: "rate" });
   });
 
   test("production sampling keeps errors, HTTP failures, and slow events before rate sampling", () => {

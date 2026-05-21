@@ -1,6 +1,6 @@
 {
   "name": "@tucupy/widekit",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Production wide-event observability kit for Axiom.",
   "homepage": "https://github.com/Tucupy-Tecnologia/widekit#readme",
   "bugs": {
@@ -20,7 +20,6 @@
   "types": "./dist/index.d.mts",
   "exports": {
     ".": "./dist/index.mjs",
-    "./config": "./dist/config.mjs",
     "./elysia": "./dist/elysia.mjs",
     "./fields": "./dist/fields.mjs",
     "./otlp": "./dist/otlp.mjs",

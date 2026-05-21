@@ -38,46 +38,29 @@ For our products, this is the intended setup.
 
 ```ts
 // src/lib/widekit.ts
-import { widekit } from "@tucupy/widekit";
-import { standardConfig } from "@tucupy/widekit/config";
+import { redactFields, widekit } from "@tucupy/widekit";
 
 export const client = widekit({
-  config: standardConfig,
-  service: "example-service",
-  redact: ["user.email", "auth.token"],
-});
-```
-
-`standardConfig` configures:
-
-- Axiom export through OTLP/HTTP
-- `AXIOM_TOKEN` and `AXIOM_DATASET` as the default Axiom env vars
-- `APP_VERSION` and `NODE_ENV` as the default version and environment env vars
-- standard service, version, and environment fields
-- production sampling defaults
-- explicit redaction
-- Widekit diagnostics and sampling metadata as OTLP attributes
-
-Override defaults only when a project needs to:
-
-```ts
-widekit({
-  config: standardConfig,
   service: {
     name: "example-service",
-    version: process.env.RELEASE_ID,
-    environment: process.env.DEPLOY_ENV,
+    version: process.env.APP_VERSION,
+    environment: process.env.NODE_ENV,
   },
   axiom: {
-    token: process.env.CUSTOM_AXIOM_TOKEN,
-    dataset: process.env.CUSTOM_AXIOM_DATASET,
+    token: process.env.AXIOM_TOKEN,
+    dataset: process.env.AXIOM_DATASET,
   },
-  redact: {
-    fields: ["user.email", "auth.token"],
-    replacement: "[secret]",
+  sampling: {
+    successRate: 0.05,
+    slowDurationMs: 1000,
   },
+  redaction: redactFields(["user.email", "auth.token"]),
 });
 ```
+
+Keep this setup explicit in each product. The values are intentionally copy-pasteable instead of hidden behind a library-owned standard config.
+
+This setup sends Wide Events to Axiom through OTLP/HTTP, sets standard service metadata, keeps errors/HTTP 5xx/slow lifecycles, samples normal success events at `5%`, applies explicit redaction, and exports Widekit diagnostics and sampling metadata as OTLP attributes.
 
 ## Elysia Usage
 
@@ -171,13 +154,20 @@ If the callback throws, Widekit captures the error fields, emits the completed W
 
 Redaction is explicit. Widekit does not guess sensitive fields from names.
 
-For the standard setup, pass fields through `redact`:
+For the standard setup, configure redaction explicitly:
 
 ```ts
+import { redactFields, widekit } from "@tucupy/widekit";
+
 widekit({
-  config: standardConfig,
-  service: "example-service",
-  redact: ["user.email", "auth.token"],
+  service: {
+    name: "example-service",
+  },
+  axiom: {
+    token: process.env.AXIOM_TOKEN,
+    dataset: process.env.AXIOM_DATASET,
+  },
+  redaction: redactFields(["user.email", "auth.token"]),
 });
 ```
 
@@ -224,7 +214,7 @@ Sampling happens before redaction so sampling rules can inspect the original com
 
 ## Sampling
 
-`widekit({ config: standardConfig })` installs `productionSampling()` by default.
+`widekit()` uses `productionSampling()` for the configured sampling policy.
 
 It keeps:
 
@@ -233,25 +223,32 @@ It keeps:
 - slow lifecycles, default `1000ms`
 - normal success events at the configured rate
 
-The default `successRate` is `1`, so production events are not silently dropped unless a project opts into sampling.
+Our copy-paste production setup uses `successRate: 0.05`, so normal success events are sampled at `5%`. If `sampling` is omitted, Widekit keeps all success events; keep the rate explicit in each product.
 
 ```ts
 widekit({
-  config: standardConfig,
-  service: "example-api",
+  service: {
+    name: "example-api",
+    version: process.env.APP_VERSION,
+    environment: process.env.NODE_ENV,
+  },
+  axiom: {
+    token: process.env.AXIOM_TOKEN,
+    dataset: process.env.AXIOM_DATASET,
+  },
   sampling: {
-    successRate: 0.2,
-    slowDurationMs: 750,
+    successRate: 0.05,
+    slowDurationMs: 1000,
   },
 });
 ```
 
-With that config:
+With that setup:
 
 - errors are kept
 - HTTP 5xx responses are kept
-- events slower than `750ms` are kept
-- normal success events are sampled at `20%`
+- events slower than `1000ms` are kept
+- normal success events are sampled at `5%`
 
 ## Standard Fields
 
@@ -325,13 +322,13 @@ Find HTTP 5xx responses:
 The standard `widekit()` helper is the main path for our products. Lower-level primitives remain available when needed:
 
 - `createWidekit()` for custom lifecycle and sink setup
-- `createProductionWidekit()` for explicit production setup without the standard env convention
+- `createProductionWidekit()` for the same production setup under the longer factory name
 - `@tucupy/widekit/otlp` for direct OTLP Sink usage
 - `defineContract()` and `field` for optional product contracts
 - custom sampling policies
 - custom redaction hooks
 
-Additional framework support should stay modular: add a subpath adapter that exports `widekit({ client })`, keep framework dependencies optional, and preserve the root `widekit({ config: standardConfig })` helper as the default application setup.
+Additional framework support should stay modular: add a subpath adapter that exports `widekit({ client })`, keep framework dependencies optional, and preserve the root `widekit({...})` helper as the default explicit production setup.
 
 ## License
 

@@ -1,6 +1,5 @@
 export { createWidekit } from "./core/client.ts";
 export { defineContract, field } from "./core/contract.ts";
-export { standardConfig } from "./config.ts";
 export { standardContract, standardFieldDictionary, standardFields } from "./fields.ts";
 export {
   composeRedaction,
@@ -10,7 +9,6 @@ export {
   widekit,
 } from "./production.ts";
 export type { CreateWidekitOptions, ServiceMetadata, WidekitClient } from "./core/client.ts";
-export type { WidekitConfig } from "./config.ts";
 export type {
   ContractDefinition,
   FieldDefinition,
@@ -24,10 +22,6 @@ export type {
   ProductionAxiomOptions,
   ProductionSamplingOptions,
   RedactFieldsOptions,
-  StandardWidekitEnv,
-  StandardWidekitOptions,
-  StandardWidekitRedaction,
-  StandardWidekitService,
 } from "./production.ts";
 export type {
   StandardFieldCategory,
