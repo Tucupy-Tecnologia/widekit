@@ -1,12 +1,17 @@
+import { createServerFn } from "@tanstack/react-start";
 import { Elysia } from "elysia";
 import { describe, expect, test } from "vite-plus/test";
 import { widekit as elysiaWidekit } from "../src/elysia.ts";
-import { createWidekit } from "../src/index.ts";
+import { createWidekit, type WideEventContext, type WideEventInput } from "../src/index.ts";
 import { memory } from "./helpers.ts";
 import {
   widekit as tanStackStartWidekit,
+  widekitServerFn,
   type TanStackStartWidekitContext,
 } from "../src/tanstack-start.ts";
+
+type IsAny<T> = 0 extends 1 & T ? true : false;
+type IsNotAny<T> = IsAny<T> extends true ? false : true;
 
 type TanStackRequestMiddlewareServer = (input: {
   request: Request;
@@ -100,5 +105,29 @@ describe("framework adapters", () => {
       "route.id": "orders.show",
       outcome: "success",
     });
+  });
+
+  test("TanStack Start server function middleware types Wide Event Context without casts", () => {
+    const sink = memory();
+    const client = createWidekit({ sink });
+    const requestMiddleware = tanStackStartWidekit({ client });
+    const serverFunctionMiddleware = widekitServerFn(requestMiddleware);
+
+    createServerFn({ method: "POST" })
+      .middleware([serverFunctionMiddleware])
+      .handler(({ context }) => {
+        const contextIsNotAny: IsNotAny<typeof context> = true;
+        const wideEventIsNotAny: IsNotAny<typeof context.wideEvent> = true;
+        const wideEvent: WideEventContext<Record<string, WideEventInput>> = context.wideEvent;
+
+        void contextIsNotAny;
+        void wideEventIsNotAny;
+
+        wideEvent.set("route.id", "resource.create");
+
+        return { ok: true };
+      });
+
+    expect(serverFunctionMiddleware.options.middleware).toEqual([requestMiddleware]);
   });
 });

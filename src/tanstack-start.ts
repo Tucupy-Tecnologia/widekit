@@ -59,3 +59,15 @@ export function widekit<Fields extends WideEventFields = WideEventFields>(
     }
   });
 }
+
+export type TanStackStartWidekitRequestMiddleware<
+  Fields extends WideEventFields = WideEventFields,
+> = ReturnType<typeof widekit<Fields>>;
+
+export function widekitServerFn<Fields extends WideEventFields = WideEventFields>(
+  requestMiddleware: TanStackStartWidekitRequestMiddleware<Fields>,
+) {
+  return createMiddleware({ type: "function" })
+    .middleware([requestMiddleware])
+    .server(({ next }) => next());
+}

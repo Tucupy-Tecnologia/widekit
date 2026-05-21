@@ -94,34 +94,44 @@ The adapter sets request and response fields such as:
 
 ## TanStack Start Usage
 
+Create one request middleware object and reuse it for both `createStart` and server functions.
+
+```ts
+// src/lib/widekit-start.ts
+import { widekit, widekitServerFn } from "@tucupy/widekit/tanstack-start";
+import { client } from "./widekit.ts";
+
+export const widekitRequest = widekit({ client });
+export const withWideEvent = widekitServerFn(widekitRequest);
+```
+
 Register the request middleware with TanStack Start.
 
 ```ts
 // src/start.ts
 import { createStart } from "@tanstack/react-start";
-import { widekit } from "@tucupy/widekit/tanstack-start";
-import { client } from "./lib/widekit.ts";
+import { widekitRequest } from "./lib/widekit-start.ts";
 
 export const start = createStart(() => ({
-  requestMiddleware: [widekit({ client })],
+  requestMiddleware: [widekitRequest],
 }));
 ```
 
-Downstream server middleware or handlers can use the `wideEvent` from request context.
+Server functions can use `context.wideEvent` without a cast when they include `withWideEvent`.
 
 ```ts
-import { createMiddleware } from "@tanstack/react-start";
-import type { TanStackStartWidekitContext } from "@tucupy/widekit/tanstack-start";
+import { createServerFn } from "@tanstack/react-start";
+import { withWideEvent } from "./lib/widekit-start.ts";
 
-export const resourceWideEvent = createMiddleware().server(async ({ context, next }) => {
-  const { wideEvent } = context as TanStackStartWidekitContext;
+export const createResource = createServerFn({ method: "POST" })
+  .middleware([withWideEvent])
+  .handler(async ({ context }) => {
+    context.wideEvent.set("route.id", "resource.create");
+    context.wideEvent.set("user.id", "usr_abc123");
+    context.wideEvent.set("domain.amount_cents", 1599);
 
-  wideEvent.set("route.id", "resource.create");
-  wideEvent.set("user.id", "usr_abc123");
-  wideEvent.set("domain.amount_cents", 1599);
-
-  return next();
-});
+    return { ok: true };
+  });
 ```
 
 The adapter sets request fields before downstream code runs and response fields after downstream code returns.
