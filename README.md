@@ -10,15 +10,15 @@ Widekit creates one lifecycle-scoped Wide Event, lets application code enrich it
 
 ```json
 {
-  "event.name": "checkout",
+  "event.name": "operation.perform",
   "timestamp": "2026-05-20T18:00:00.000Z",
   "outcome": "success",
   "duration.ms": 42,
-  "service.name": "traveltogether-web",
+  "service.name": "example-service",
   "service.version": "2026.05.20.1",
   "deployment.environment.name": "production",
-  "user.id": "user_123",
-  "cart.total_cents": 1599
+  "user.id": "usr_abc123",
+  "domain.amount_cents": 1599
 }
 ```
 
@@ -42,7 +42,7 @@ import { createProductionWidekit, redactFields } from "@tucupy/widekit";
 
 export const client = createProductionWidekit({
   service: {
-    name: "traveltogether-web",
+    name: "example-service",
     version: process.env.APP_VERSION,
     environment: process.env.NODE_ENV,
   },
@@ -71,12 +71,12 @@ import { Elysia } from "elysia";
 import { widekit } from "@tucupy/widekit/elysia";
 import { client } from "./lib/widekit.ts";
 
-const app = new Elysia().use(widekit({ client })).post("/checkout", async ({ set, wideEvent }) => {
+const app = new Elysia().use(widekit({ client })).post("/resources", async ({ set, wideEvent }) => {
   set.status = 201;
 
-  wideEvent.set("route.id", "checkout.create");
-  wideEvent.set("user.id", "user_123");
-  wideEvent.set("cart.total_cents", 1599);
+  wideEvent.set("route.id", "resource.create");
+  wideEvent.set("user.id", "usr_abc123");
+  wideEvent.set("domain.amount_cents", 1599);
 
   return { ok: true };
 });
@@ -113,12 +113,12 @@ Downstream server middleware or handlers can use the `wideEvent` from request co
 import { createMiddleware } from "@tanstack/react-start";
 import type { TanStackStartWidekitContext } from "@tucupy/widekit/tanstack-start";
 
-export const checkoutWideEvent = createMiddleware().server(async ({ context, next }) => {
+export const resourceWideEvent = createMiddleware().server(async ({ context, next }) => {
   const { wideEvent } = context as TanStackStartWidekitContext;
 
-  wideEvent.set("route.id", "checkout.create");
-  wideEvent.set("user.id", "user_123");
-  wideEvent.set("cart.total_cents", 1599);
+  wideEvent.set("route.id", "resource.create");
+  wideEvent.set("user.id", "usr_abc123");
+  wideEvent.set("domain.amount_cents", 1599);
 
   return next();
 });
@@ -131,10 +131,10 @@ The adapter sets request fields before downstream code runs and response fields 
 Use `client.run` for background work, scripts, queues, or any lifecycle not owned by a framework adapter.
 
 ```ts
-await client.run("invoice.send", async (wideEvent) => {
-  wideEvent.set("job.name", "invoice.send");
+await client.run("job.process", async (wideEvent) => {
+  wideEvent.set("job.name", "job.process");
   wideEvent.set("attempt.number", 1);
-  wideEvent.set("user.id", "user_123");
+  wideEvent.set("user.id", "usr_abc123");
 });
 ```
 
@@ -159,7 +159,7 @@ Given this event:
 {
   "user.email": "a@example.com",
   "auth.token": "token_123",
-  "cart.total_cents": 1599
+  "domain.amount_cents": 1599
 }
 ```
 
@@ -169,7 +169,7 @@ The emitted event contains:
 {
   "user.email": "[redacted]",
   "auth.token": "[secret]",
-  "cart.total_cents": 1599
+  "domain.amount_cents": 1599
 }
 ```
 
@@ -199,7 +199,7 @@ The default `successRate` is `1`, so production events are not silently dropped 
 ```ts
 createProductionWidekit({
   service: {
-    name: "checkout-api",
+    name: "example-api",
     version: process.env.APP_VERSION,
     environment: process.env.NODE_ENV,
   },
@@ -260,26 +260,26 @@ error.message
 error.stack
 ```
 
-Product-specific fields such as `user.id`, `org.id`, `product.name`, `job.name`, and `cart.total_cents` belong in each product's contract or conventions.
+Product-specific fields such as `user.id`, `org.id`, `product.name`, `job.name`, and `domain.amount_cents` belong in each product's contract or conventions.
 
 ## Axiom Queries
 
 Find errors for one service:
 
 ```sql
-['service.name'] == "traveltogether-web" and outcome == "error"
+['service.name'] == "example-service" and outcome == "error"
 ```
 
-Find slow checkout events:
+Find slow operation events:
 
 ```sql
-['event.name'] == "checkout" and ['duration.ms'] > 1000
+['event.name'] == "operation.perform" and ['duration.ms'] > 1000
 ```
 
 Find all events for one user when the product sets `user.id`:
 
 ```sql
-['user.id'] == "user_123"
+['user.id'] == "usr_abc123"
 ```
 
 Find HTTP 5xx responses:
@@ -302,7 +302,7 @@ Additional framework support should stay modular: add a subpath adapter that exp
 
 ## License
 
-MIT. Widekit was built for Tucupy's production observability standard, not primarily as a public general-purpose framework. The license permits reuse, modification, redistribution, and publishing under the terms in [LICENSE](./LICENSE).
+MIT. Widekit was built for an internal production observability standard, not primarily as a public general-purpose framework. The license permits reuse, modification, redistribution, and publishing under the terms in [LICENSE](./LICENSE).
 
 ## Development
 
